@@ -1,0 +1,268 @@
+// Prisma schema file for SQLite
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  role          String    @default("USER")
+
+  accounts        Account[]
+  sessions        Session[]
+  managedProjects ManagedProject[]
+
+  stripeCustomerId       String?   @unique
+  stripeSubscriptionId   String?   @unique
+  stripePriceId          String?
+  stripeCurrentPeriodEnd DateTime?
+  Report                 Report[]
+
+  @@map("users")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Manager {
+  id     String  @id @default(cuid())
+  userId String
+  name   String?
+
+  managedProjects ManagedProject[]
+
+  @@map(name: "managers")
+}
+
+model ManagedProject {
+  id            String   @id @default(cuid())
+  projectName   String
+  projectType   String
+  clientName    String
+  startDate     DateTime
+  endDate       DateTime
+  budget        Float?
+  projectStatus String
+  description   String?
+
+  dimensions  Dimension? @relation(fields: [dimensionId], references: [id])
+  dimensionId String?    @unique
+
+  layoutPreferences Layout[]
+  materials         Material[]
+
+  architecturalStyle String?
+
+  structuralFeatures StructuralFeature[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  managerId String
+  manager   Manager @relation(fields: [managerId], references: [id])
+
+  userId  String?
+  user    User?    @relation(fields: [userId], references: [id])
+  scenes  Scene[]
+  designs Design[]
+  Report  Report[]
+
+  @@map("managed_projects")
+}
+
+model Dimension {
+  id     String @id @default(cuid())
+  length Float
+  width  Float
+  height Float?
+  units  String
+
+  projectId String?         @unique
+  project   ManagedProject?
+
+  @@map("project_dimensions")
+}
+
+model Layout {
+  id          String         @id @default(cuid())
+  type        String // Layout type (e.g., Open Plan, Closed Rooms)
+  description String? // Optional description of the layout
+  projectId   String
+  project     ManagedProject @relation(fields: [projectId], references: [id])
+
+  @@map(name: "project_layouts")
+}
+
+model Material {
+  id         String         @id @default(cuid())
+  type       String // Material type (e.g., Concrete, Wood, Steel)
+  properties String? // Additional details, e.g., strength, grade
+  projectId  String
+  project    ManagedProject @relation(fields: [projectId], references: [id])
+
+  @@map(name: "project_materials")
+}
+
+model StructuralFeature {
+  id          String         @id @default(cuid())
+  type        String // Feature type (e.g., Beam, Column, Foundation)
+  description String? // Optional description of the feature
+  quantity    Int? // Number of such features
+  projectId   String
+  project     ManagedProject @relation(fields: [projectId], references: [id])
+
+  @@map(name: "project_structural_features")
+}
+
+model Scene {
+  id          String         @id @default(cuid())
+  name        String
+  projectId   String
+  project     ManagedProject @relation(fields: [projectId], references: [id])
+  meshes      Mesh[]
+  lights      Light[]
+  cameras     Camera[]
+  materials   Materials[]
+  environment Environment?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model Mesh {
+  id         String     @id @default(cuid())
+  name       String
+  type       String // Replaced enum with String
+  sceneId    String
+  scene      Scene      @relation(fields: [sceneId], references: [id])
+  position   String // JSON string for {x, y, z}
+  rotation   String // JSON string for {x, y, z}
+  scaling    String // JSON string for {x, y, z}
+  materialId String?
+  material   Materials? @relation(fields: [materialId], references: [id])
+  properties String? // JSON string for properties
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model Materials {
+  id         String   @id @default(cuid())
+  name       String
+  type       String // Replaced enum with String
+  sceneId    String
+  scene      Scene    @relation(fields: [sceneId], references: [id])
+  meshes     Mesh[]
+  properties String // JSON string for properties
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Light {
+  id        String   @id @default(cuid())
+  name      String
+  type      String // Replaced enum with String
+  sceneId   String
+  scene     Scene    @relation(fields: [sceneId], references: [id])
+  position  String // JSON string for {x, y, z}
+  intensity Float
+  diffuse   String? // JSON string for {r, g, b}
+  specular  String? // JSON string for {r, g, b}
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Camera {
+  id         String   @id @default(cuid())
+  name       String
+  type       String // Replaced enum with String
+  sceneId    String
+  scene      Scene    @relation(fields: [sceneId], references: [id])
+  position   String // JSON string for {x, y, z}
+  target     String // JSON string for {x, y, z}
+  properties String? // JSON string for properties
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Environment {
+  id           String   @id @default(cuid())
+  sceneId      String   @unique
+  scene        Scene    @relation(fields: [sceneId], references: [id])
+  skyboxType   String?
+  groundColor  String? // JSON string for {r, g, b}
+  ambientColor String? // JSON string for {r, g, b}
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Design {
+  id        String         @id @default(cuid())
+  projectId String
+  project   ManagedProject @relation(fields: [projectId], references: [id])
+
+  designData String // Store the full design object as JSON
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Report {
+  id         String         @id @default(cuid())
+  content    String         
+  projectId  String
+  project    ManagedProject @relation(fields: [projectId], references: [id])
+  command    String?
+  reportType String         @default("general") // general, progress, financial, etc.
+  userId     String
+  user       User           @relation(fields: [userId], references: [id])
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@map("reports")
+}
