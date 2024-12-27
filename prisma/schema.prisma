@@ -1,17 +1,20 @@
-// Prisma schema file for SQLite
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  ADMIN
+  USER
+}
+
 model Account {
-  id                String   @id @default(cuid())
-  userId            String
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String   @db.ObjectId
   type              String
   provider          String
   providerAccountId String
@@ -32,9 +35,9 @@ model Account {
 }
 
 model Session {
-  id           String   @id @default(cuid())
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
   sessionToken String   @unique
-  userId       String
+  userId       String   @db.ObjectId
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -42,7 +45,7 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
   name          String?
   email         String?   @unique
   emailVerified DateTime?
@@ -65,6 +68,7 @@ model User {
 }
 
 model VerificationToken {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
   identifier String
   token      String   @unique
   expires    DateTime
@@ -73,8 +77,8 @@ model VerificationToken {
 }
 
 model Manager {
-  id     String  @id @default(cuid())
-  userId String
+  id     String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId String  @db.ObjectId
   name   String?
 
   managedProjects ManagedProject[]
@@ -83,7 +87,7 @@ model Manager {
 }
 
 model ManagedProject {
-  id            String   @id @default(cuid())
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
   projectName   String
   projectType   String
   clientName    String
@@ -93,8 +97,8 @@ model ManagedProject {
   projectStatus String
   description   String?
 
-  dimensions  Dimension? @relation(fields: [dimensionId], references: [id])
-  dimensionId String?    @unique
+  dimension   Dimension?
+  dimensionId String?    @unique @db.ObjectId
 
   layoutPreferences Layout[]
   materials         Material[]
@@ -106,10 +110,10 @@ model ManagedProject {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  managerId String
+  managerId String  @db.ObjectId
   manager   Manager @relation(fields: [managerId], references: [id])
 
-  userId  String?
+  userId  String?  @db.ObjectId
   user    User?    @relation(fields: [userId], references: [id])
   scenes  Scene[]
   designs Design[]
@@ -119,53 +123,54 @@ model ManagedProject {
 }
 
 model Dimension {
-  id     String @id @default(cuid())
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
   length Float
   width  Float
   height Float?
   units  String
 
-  projectId String?         @unique
-  project   ManagedProject?
+  project        ManagedProject @relation(fields: [projectId], references: [id])
+  projectId      String         @db.ObjectId @unique
+  managedProjectId String?         @db.ObjectId
 
   @@map("project_dimensions")
 }
 
 model Layout {
-  id          String         @id @default(cuid())
-  type        String // Layout type (e.g., Open Plan, Closed Rooms)
-  description String? // Optional description of the layout
-  projectId   String
+  id          String         @id @default(auto()) @map("_id") @db.ObjectId
+  type        String
+  description String?
+  projectId   String         @db.ObjectId
   project     ManagedProject @relation(fields: [projectId], references: [id])
 
   @@map(name: "project_layouts")
 }
 
 model Material {
-  id         String         @id @default(cuid())
-  type       String // Material type (e.g., Concrete, Wood, Steel)
-  properties String? // Additional details, e.g., strength, grade
-  projectId  String
+  id         String         @id @default(auto()) @map("_id") @db.ObjectId
+  type       String
+  properties String?
+  projectId  String         @db.ObjectId
   project    ManagedProject @relation(fields: [projectId], references: [id])
 
   @@map(name: "project_materials")
 }
 
 model StructuralFeature {
-  id          String         @id @default(cuid())
-  type        String // Feature type (e.g., Beam, Column, Foundation)
-  description String? // Optional description of the feature
-  quantity    Int? // Number of such features
-  projectId   String
+  id          String         @id @default(auto()) @map("_id") @db.ObjectId
+  type        String
+  description String?
+  quantity    Int?
+  projectId   String         @db.ObjectId
   project     ManagedProject @relation(fields: [projectId], references: [id])
 
   @@map(name: "project_structural_features")
 }
 
 model Scene {
-  id          String         @id @default(cuid())
+  id          String         @id @default(auto()) @map("_id") @db.ObjectId
   name        String
-  projectId   String
+  projectId   String         @db.ObjectId
   project     ManagedProject @relation(fields: [projectId], references: [id])
   meshes      Mesh[]
   lights      Light[]
@@ -177,89 +182,89 @@ model Scene {
 }
 
 model Mesh {
-  id         String     @id @default(cuid())
+  id         String     @id @default(auto()) @map("_id") @db.ObjectId
   name       String
-  type       String // Replaced enum with String
-  sceneId    String
+  type       String
+  sceneId    String     @db.ObjectId
   scene      Scene      @relation(fields: [sceneId], references: [id])
-  position   String // JSON string for {x, y, z}
-  rotation   String // JSON string for {x, y, z}
-  scaling    String // JSON string for {x, y, z}
-  materialId String?
+  position   String
+  rotation   String
+  scaling    String
+  materialId String?    @db.ObjectId
   material   Materials? @relation(fields: [materialId], references: [id])
-  properties String? // JSON string for properties
+  properties String?
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 }
 
 model Materials {
-  id         String   @id @default(cuid())
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
   name       String
-  type       String // Replaced enum with String
-  sceneId    String
+  type       String
+  sceneId    String   @db.ObjectId
   scene      Scene    @relation(fields: [sceneId], references: [id])
   meshes     Mesh[]
-  properties String // JSON string for properties
+  properties String
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
 
 model Light {
-  id        String   @id @default(cuid())
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
   name      String
-  type      String // Replaced enum with String
-  sceneId   String
+  type      String
+  sceneId   String   @db.ObjectId
   scene     Scene    @relation(fields: [sceneId], references: [id])
-  position  String // JSON string for {x, y, z}
+  position  String
   intensity Float
-  diffuse   String? // JSON string for {r, g, b}
-  specular  String? // JSON string for {r, g, b}
+  diffuse   String?
+  specular  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Camera {
-  id         String   @id @default(cuid())
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
   name       String
-  type       String // Replaced enum with String
-  sceneId    String
+  type       String
+  sceneId    String   @db.ObjectId
   scene      Scene    @relation(fields: [sceneId], references: [id])
-  position   String // JSON string for {x, y, z}
-  target     String // JSON string for {x, y, z}
-  properties String? // JSON string for properties
+  position   String
+  target     String
+  properties String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
 
 model Environment {
-  id           String   @id @default(cuid())
-  sceneId      String   @unique
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  sceneId      String   @unique @db.ObjectId
   scene        Scene    @relation(fields: [sceneId], references: [id])
   skyboxType   String?
-  groundColor  String? // JSON string for {r, g, b}
-  ambientColor String? // JSON string for {r, g, b}
+  groundColor  String?
+  ambientColor String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
 
 model Design {
-  id        String         @id @default(cuid())
-  projectId String
+  id        String         @id @default(auto()) @map("_id") @db.ObjectId
+  projectId String         @db.ObjectId
   project   ManagedProject @relation(fields: [projectId], references: [id])
 
-  designData String // Store the full design object as JSON
+  designData String
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
 
 model Report {
-  id         String         @id @default(cuid())
-  content    String         
-  projectId  String
+  id         String         @id @default(auto()) @map("_id") @db.ObjectId
+  content    String
+  projectId  String         @db.ObjectId
   project    ManagedProject @relation(fields: [projectId], references: [id])
   command    String?
-  reportType String         @default("general") // general, progress, financial, etc.
-  userId     String
+  reportType String         @default("general")
+  userId     String         @db.ObjectId
   user       User           @relation(fields: [userId], references: [id])
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
