@@ -52,7 +52,7 @@ model User {
   image         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  role          String    @default("USER")
+  role          UserRole  @default(USER)
 
   accounts        Account[]
   sessions        Session[]
@@ -129,9 +129,9 @@ model Dimension {
   height Float?
   units  String
 
-  project        ManagedProject @relation(fields: [projectId], references: [id])
-  projectId      String         @db.ObjectId @unique
-  managedProjectId String?         @db.ObjectId
+  project          ManagedProject @relation(fields: [projectId], references: [id])
+  projectId        String         @unique @db.ObjectId
+  managedProjectId String?        @db.ObjectId
 
   @@map("project_dimensions")
 }
