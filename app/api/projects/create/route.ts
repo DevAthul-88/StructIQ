@@ -109,24 +109,6 @@ export async function POST(req) {
 
 
     let dimensionId = null;
-    // Create the main project
-    const project = await prisma.managedProject.create({
-      data: {
-        budget: parseFloat(budget),
-        clientName,
-        endDate: new Date(endDate),
-        managerId: projectManager,
-        projectName,
-        projectStatus,
-        projectType,
-        startDate: new Date(startDate),
-        description,
-        architecturalStyle,
-        userId: validUserId,
-        dimensionId, // Only passed if dimension was created
-      },
-    });
-
     // Create dimension if applicable
 
     if (length && width) {
@@ -146,6 +128,25 @@ export async function POST(req) {
         dimensionId = null;  // Ensure dimensionId is null if creation fails
       }
     }
+
+    // Create the main project
+    const project = await prisma.managedProject.create({
+      data: {
+        budget: parseFloat(budget),
+        clientName,
+        endDate: new Date(endDate),
+        managerId: projectManager,
+        projectName,
+        projectStatus,
+        projectType,
+        startDate: new Date(startDate),
+        description,
+        architecturalStyle,
+        userId: validUserId,
+        dimensionId, // Only passed if dimension was created
+      },
+    });
+
 
     // Create related entities (Materials, Layout Preferences, Structural Features)
     if (materials && materials.length > 0) {
