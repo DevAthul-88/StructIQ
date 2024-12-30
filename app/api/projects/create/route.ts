@@ -90,140 +90,150 @@ export async function POST(req) {
       }
     }
 
-    if (!manager) {
-      console.error(`Manager not found with ID: ${projectManager}`);
-      return new Response(
-        JSON.stringify({
-          error: "Manager not found",
-          details: `Checked manager ID: ${projectManager}`
-        }),
-        { status: 400 }
-      );
-    }
-
-    // Validate user if provided
-    let validUserId = null;
-    if (user?.id) {
-      const existingUser = await prisma.user.findUnique({
-        where: { id: user.id },
-      });
-
-      if (!existingUser) {
-        console.error(`User not found with ID: ${user.id}`);
-        validUserId = null;
-      } else {
-        validUserId = user.id;
+      if (!manager) {
+        console.error(`Manager not found with ID: ${projectManager}`);
+        return new Response(
+          JSON.stringify({
+            error: "Manager not found",
+            details: `Checked manager ID: ${projectManager}`
+          }),
+          { status: 400 }
+        );
       }
-    }
 
-    const project = await prisma.managedProject.create({
-      data: {
-        budget: parseFloat(budget),
-        clientName,
-        endDate: new Date(endDate),
-        managerId: projectManager,
-        projectName,
-        projectStatus,
-        projectType,
-        startDate: new Date(startDate),
-        description,
-        architecturalStyle,
-        userId: validUserId,
-        dimension: length && width ? {
-          create: {
-            length: parseFloat(length),
-            width: parseFloat(width),
-            height: height ? parseFloat(height) : null,
-            units: `${lengthUnit}, ${widthUnit}, ${heightUnit || 'N/A'}`,
-          }
-        } : undefined,
-      },
-      include: {
-        dimension: true
-      }
-    });
-
-
-    // Create related entities
-    // Materials
-    if (materials && materials.length > 0) {
-      try {
-        await prisma.material.createMany({
-          data: materials.map((material) => ({
-            type: material.type,
-            properties: material.properties,
-            projectId: project.id,
-          })),
+      // Validate user if provided
+      let validUserId = null;
+      if (user?.id) {
+        const existingUser = await prisma.user.findUnique({
+          where: { id: user.id },
         });
-        console.log("Materials created for project");
-      } catch (matError) {
-        console.error("Error creating materials:", matError);
-      }
-    }
 
-    // Layout Preferences
-    if (preferredLayoutType) {
-      try {
-        await prisma.layout.create({
+        if (!existingUser) {
+          console.error(`User not found with ID: ${user.id}`);
+          validUserId = null;
+        } else {
+          validUserId = user.id;
+        }
+      }
+
+      const project = await prisma.$transaction(async (tx) => {
+        const managedProject = await tx.managedProject.create({
           data: {
-            type: preferredLayoutType,
-            description: layoutDescription,
-            projectId: project.id,
+            budget: parseFloat(budget),
+            clientName,
+            endDate: new Date(endDate),
+            managerId: projectManager,
+            projectName,
+            projectStatus,
+            projectType,
+            startDate: new Date(startDate),
+            description,
+            architecturalStyle,
+            userId: validUserId,
           },
         });
-        console.log("Layout preference created");
-      } catch (layoutError) {
-        console.error("Error creating layout:", layoutError);
+      
+        if (length && width) {
+          const dimension = await tx.dimension.create({
+            data: {
+              length: parseFloat(length),
+              width: parseFloat(width),
+              height: height ? parseFloat(height) : null,
+              units: `${lengthUnit}, ${widthUnit}, ${heightUnit || 'N/A'}`,
+              projectId: managedProject.id,
+            },
+          });
+      
+          await tx.managedProject.update({
+            where: { id: managedProject.id },
+            data: { dimensionId: dimension.id },
+          });
+        }
+      
+        return managedProject;
+      });
+      
+      // Create related entities
+      // Materials
+      if (materials && materials.length > 0) {
+        try {
+          await prisma.material.createMany({
+            data: materials.map((material) => ({
+              type: material.type,
+              properties: material.properties,
+              projectId: project.id,
+            })),
+          });
+          console.log("Materials created for project");
+        } catch (matError) {
+          console.error("Error creating materials:", matError);
+        }
       }
-    }
 
-    // Structural Features
-    if (structuralFeatures && structuralFeatures.length > 0) {
-      try {
-        await prisma.structuralFeature.createMany({
-          data: structuralFeatures.map((feature) => ({
-            type: feature.type,
-            description: feature.description,
-            quantity: feature.quantity,
-            projectId: project.id,
-          })),
-        });
-        console.log("Structural features created");
-      } catch (featError) {
-        console.error("Error creating structural features:", featError);
+      // Layout Preferences
+      if (preferredLayoutType) {
+        try {
+          await prisma.layout.create({
+            data: {
+              type: preferredLayoutType,
+              description: layoutDescription,
+              projectId: project.id,
+            },
+          });
+          console.log("Layout preference created");
+        } catch (layoutError) {
+          console.error("Error creating layout:", layoutError);
+        }
       }
+
+      // Structural Features
+      if (structuralFeatures && structuralFeatures.length > 0) {
+        try {
+          await prisma.structuralFeature.createMany({
+            data: structuralFeatures.map((feature) => ({
+              type: feature.type,
+              description: feature.description,
+              quantity: feature.quantity,
+              projectId: project.id,
+            })),
+          });
+          console.log("Structural features created");
+        } catch (featError) {
+          console.error("Error creating structural features:", featError);
+        }
+      }
+
+      // Fetch the full project with relations
+      const fullProject = await prisma.managedProject.findUnique({
+        where: { id: project.id },
+        include: {
+          dimensions: true,
+          materials: true,
+          layoutPreferences: true,
+          structuralFeatures: true,
+          manager: true,
+          user: true,
+        },
+      });
+
+      return new Response(JSON.stringify({ success: true, project: fullProject }), { status: 201 });
+    } catch (error) {
+      console.error("Comprehensive Error Details:", {
+        name: error.name,
+        message: error.message,
+        code: error.code,
+        meta: error.meta,
+        stack: error.stack
+      });
+
+      return new Response(
+        JSON.stringify({
+          error: "Failed to create project",
+          details: error.message,
+          fullError: error
+        }),
+        { status: 500 }
+      );
     }
-
-    // Fetch the full project with relations
-    const fullProject = await prisma.managedProject.findUnique({
-      where: { id: project.id },
-      include: {
-        dimensions: true,
-        materials: true,
-        layoutPreferences: true,
-        structuralFeatures: true,
-        manager: true,
-        user: true,
-      },
-    });
-
-    return new Response(JSON.stringify({ success: true, project: fullProject }), { status: 201 });
-  } catch (error) {
-    console.error("Comprehensive Error Details:", {
-      name: error.name,
-      message: error.message,
-      code: error.code,
-      meta: error.meta,
-      stack: error.stack
-    });
-
-    return new Response(
-      JSON.stringify({
-        error: "Failed to create project",
-        details: error.message,
-        fullError: error
-      }),
-      { status: 500 }
-    );
   }
-}
+  
