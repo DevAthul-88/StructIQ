@@ -97,9 +97,7 @@ model ManagedProject {
   projectStatus String
   description   String?
 
-  dimension   Dimension?
   dimensionId String?    @unique @db.ObjectId
-
   layoutPreferences Layout[]
   materials         Material[]
 
@@ -128,13 +126,11 @@ model Dimension {
   width  Float
   height Float?
   units  String
-
-  project          ManagedProject @relation(fields: [projectId], references: [id])
-  projectId        String         @unique @db.ObjectId
   managedProjectId String?        @db.ObjectId
 
   @@map("project_dimensions")
 }
+
 
 model Layout {
   id          String         @id @default(auto()) @map("_id") @db.ObjectId

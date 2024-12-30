@@ -107,26 +107,8 @@ export async function POST(req) {
       }
     }
 
-    // Create dimension if applicable
-    let dimensionId = null;
-    if (length && width) {
-      try {
-        const dimension = await prisma.dimension.create({
-          data: {
-            length: parseFloat(length),
-            width: parseFloat(width),
-            height: height ? parseFloat(height) : null,
-            units: `${lengthUnit}, ${widthUnit}, ${heightUnit || 'N/A'}`,
-          },
-        });
-        dimensionId = dimension.id;
-        console.log("Dimension created:", dimension);
-      } catch (dimError) {
-        console.error("Error creating dimension:", dimError);
-        dimensionId = null;  // Ensure dimensionId is null if creation fails
-      }
-    }
 
+    let dimensionId = null;
     // Create the main project
     const project = await prisma.managedProject.create({
       data: {
@@ -144,6 +126,26 @@ export async function POST(req) {
         dimensionId, // Only passed if dimension was created
       },
     });
+
+    // Create dimension if applicable
+
+    if (length && width) {
+      try {
+        const dimension = await prisma.dimension.create({
+          data: {
+            length: parseFloat(length),
+            width: parseFloat(width),
+            height: height ? parseFloat(height) : null,
+            units: `${lengthUnit}, ${widthUnit}, ${heightUnit || 'N/A'}`,
+          },
+        });
+        dimensionId = dimension.id;
+        console.log("Dimension created:", dimension);
+      } catch (dimError) {
+        console.error("Error creating dimension:", dimError);
+        dimensionId = null;  // Ensure dimensionId is null if creation fails
+      }
+    }
 
     // Create related entities (Materials, Layout Preferences, Structural Features)
     if (materials && materials.length > 0) {
