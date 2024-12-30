@@ -117,6 +117,7 @@ export async function POST(req) {
       }
 
       const project = await prisma.$transaction(async (tx) => {
+        // Create the managed project first
         const managedProject = await tx.managedProject.create({
           data: {
             budget: parseFloat(budget),
@@ -133,6 +134,7 @@ export async function POST(req) {
           },
         });
       
+        // If dimensions are provided, create them and associate with the project
         if (length && width) {
           const dimension = await tx.dimension.create({
             data: {
@@ -140,19 +142,23 @@ export async function POST(req) {
               width: parseFloat(width),
               height: height ? parseFloat(height) : null,
               units: `${lengthUnit}, ${widthUnit}, ${heightUnit || 'N/A'}`,
-              projectId: managedProject.id,
+              projectId: managedProject.id, // Link the dimension to the managed project
             },
           });
       
+          // Update the managed project with the dimensionId
           await tx.managedProject.update({
             where: { id: managedProject.id },
             data: { dimensionId: dimension.id },
           });
         }
       
+        // Return the created managed project with its related data
         return managedProject;
       });
       
+
+ 
       // Create related entities
       // Materials
       if (materials && materials.length > 0) {
