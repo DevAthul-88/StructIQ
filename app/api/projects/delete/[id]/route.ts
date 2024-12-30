@@ -36,7 +36,7 @@ export async function DELETE(req, { params }) {
     });
 
     await prisma.dimension.deleteMany({
-      where: { projectId: id }
+      where: { id: id }
     });
 
     // Finally delete the project
