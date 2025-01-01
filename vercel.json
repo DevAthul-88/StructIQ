@@ -1,0 +1,7 @@
+{
+    "functions": {
+        "api/design/create/*": {
+            "maxDuration": 60
+        }
+    }
+}
