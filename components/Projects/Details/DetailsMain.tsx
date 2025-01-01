@@ -36,6 +36,8 @@ export default function ProjectPage() {
       try {
         const data = await fetchSingleProject(params?.slug[0]);
         setProject(data?.project);
+        console.log(data?.project);
+        
       } catch (err) {
         setError(err.message);
       } finally {
