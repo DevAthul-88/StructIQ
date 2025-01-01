@@ -1,9 +1,11 @@
 // app/api/dashboard/charts/route.ts
 import { prisma } from '@/lib/db';
+import { getCurrentUser } from '@/lib/session';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
+    const user = await getCurrentUser();
     // Get last 7 days
     const dates = [...Array(7)].map((_, i) => {
       const date = new Date();
@@ -19,6 +21,7 @@ export async function GET() {
         const [projects, designs] = await Promise.all([
           prisma.managedProject.count({
             where: {
+              userId: user?.id,
               createdAt: {
                 gte: date,
                 lt: nextDay,

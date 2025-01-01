@@ -1,10 +1,12 @@
 // app/api/dashboard/route.ts
 import { prisma } from '@/lib/db';
+import { getCurrentUser } from '@/lib/session';
 import { NextResponse } from 'next/server';
 
 
 export async function GET() {
   try {
+    const user = await getCurrentUser();
     const [
       totalUsers,
       totalReports,
@@ -13,10 +15,28 @@ export async function GET() {
       totalDesigns,
     ] = await Promise.all([
       prisma.user.count(),
-      prisma.report.count(),
-      prisma.managedProject.count(),
-      prisma.manager.count(),
-      prisma.design.count(),
+      prisma.report.count({
+        where: {
+          userId: user?.id,
+        }
+      }),
+      prisma.managedProject.count({
+        where: {
+          userId: user?.id,
+        }
+      }),
+      prisma.manager.count({
+        where: {
+          userId: user?.id,
+        }
+      }),
+      prisma.design.count({
+        where: {
+          project: {
+            userId: user?.id
+          }
+        }
+      })
     ]);
 
     return NextResponse.json({
