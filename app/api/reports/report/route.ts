@@ -2,10 +2,8 @@ import { prisma } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
-
-
 const querySchema = z.object({
-  userId: z.string().cuid(),
+  userId: z.string(),
 })
 
 export async function GET(request: Request) {
