@@ -16,8 +16,13 @@ export async function POST(req: Request) {
 
   const subscription = await getUserSubscriptionPlan(user?.id);
 
-  const currentPeriodEnd = new Date(subscription.stripeCurrentPeriodEnd);
-  const isCurrentMonth = currentPeriodEnd >= startOfMonth;
+
+
+  const currentPeriodEnd = subscription.stripeCurrentPeriodEnd
+    ? new Date(subscription.stripeCurrentPeriodEnd)
+    : new Date();
+
+  const isCurrentMonth = currentPeriodEnd > new Date();
 
 
   const managersCount = await prisma.manager.findMany({
@@ -27,7 +32,7 @@ export async function POST(req: Request) {
   });
 
   console.log(isCurrentMonth);
-  
+
 
   if (isCurrentMonth) {
 
