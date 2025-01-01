@@ -69,7 +69,7 @@ export async function PUT(req, { params }) {
         const existingProject = await prisma.managedProject.findUnique({
             where: { id: id },  // Explicitly use id here
             include: {
-                dimensions: true,
+                dimension: true,
                 materials: true,
                 layoutPreferences: true,
                 structuralFeatures: true,
@@ -193,7 +193,7 @@ export async function PUT(req, { params }) {
         const fullUpdatedProject = await prisma.managedProject.findUnique({
             where: { id: id },  // Explicitly use id here
             include: {
-                dimensions: true,
+                dimension: true,
                 materials: true,
                 layoutPreferences: true,
                 structuralFeatures: true,

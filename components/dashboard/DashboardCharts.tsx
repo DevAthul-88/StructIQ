@@ -40,7 +40,7 @@ export default function DashboardCharts() {
 
   if (loading) {
     return (
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2 mt-4">
+      <div className="mt-4">
         <Card>
           <CardHeader>
             <CardTitle>Projects by Date</CardTitle>

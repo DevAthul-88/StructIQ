@@ -20,7 +20,7 @@ export async function GET(
     const projects = await prisma.managedProject.findMany({
       where: { userId: user.id },
       include: {
-        dimensions: true,
+        dimension: true,
         materials: true,
         layoutPreferences: true,
         structuralFeatures: true,

@@ -213,7 +213,7 @@ export async function POST(req) {
       const fullProject = await prisma.managedProject.findUnique({
         where: { id: project.id },
         include: {
-          dimensions: true,
+          dimension: true,
           materials: true,
           layoutPreferences: true,
           structuralFeatures: true,
