@@ -26,6 +26,9 @@ export async function POST(req: Request) {
     },
   });
 
+  console.log(isCurrentMonth);
+  
+
   if (isCurrentMonth) {
 
     // Check limits based on the subscription plan
