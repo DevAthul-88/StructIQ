@@ -124,9 +124,10 @@ export function PricingCards({ userId, subscriptionPlan }: PricingCardsProps) {
                   : "outline"
               }
               rounded="full"
-              onClick={() => setShowSignInModal(true)}
             >
+              <Link href={"/login"}>
               Sign in
+              </Link>
             </Button>
           )}
         </div>
