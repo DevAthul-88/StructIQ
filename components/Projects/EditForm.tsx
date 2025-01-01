@@ -55,7 +55,8 @@ export function EditProjectForm({ project }: object) {
 
     let unites = project?.dimensions?.units.split(' ')
     const newArray = unites.map(str => str.split(',').join(''));
-
+ console.log(project);
+ 
 
     const form = useForm({
         resolver: zodResolver(managedProjectSchema),

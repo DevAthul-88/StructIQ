@@ -41,12 +41,12 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       projectStatus: projectData.projectStatus,
       description: projectData.description || '',
       architecturalStyle: projectData.architecturalStyle || 'Unknown',
-      dimensions: projectData.dimensions
+      dimensions: projectData.dimension
         ? {
-          length: projectData.dimensions.length,
-          width: projectData.dimensions.width,
-          height: projectData.dimensions.height || 0,
-          units: projectData.dimensions.units,
+          length: projectData.dimension.length,
+          width: projectData.dimension.width,
+          height: projectData.dimension.height || 0,
+          units: projectData.dimension.units,
         }
         : null,
       layoutPreferences: projectData.layoutPreferences.map((layout) => ({
