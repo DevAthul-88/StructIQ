@@ -190,6 +190,8 @@ export function ManagersDataTable() {
       toast.info(`${managerName} has been added to the list of project managers.`)
       setIsAddManagerModalOpen(false);
       setCount(count+1)
+      setLoading(false)
+      setLoading1(false)
 
     } catch (error) {
       toast(`Failed to add manager. Please try again later.`)
