@@ -31,10 +31,10 @@ export async function POST(req: Request) {
     },
   });
 
-  console.log(isCurrentMonth);
+ 
 
 
-  if (isCurrentMonth) {
+
 
     // Check limits based on the subscription plan
     if (subscription.title === "Free") {
@@ -67,18 +67,8 @@ export async function POST(req: Request) {
     if (subscription.title === "Premium") {
       // No limit for Premium plan
     }
-  } else {
-    // If the subscription has expired or is not in the current month, reset limits
-    // Here you can handle logic to reset limits or renew subscription checks
-    return new Response(
-      JSON.stringify({
-        error: "Subscription expired",
-        details: "Your subscription has expired. Please renew to continue.",
-        failed: true,
-      }),
-      { status: 200 }
-    );
-  }
+  
+  
 
   if (!managerName || typeof managerName !== 'string') {
     return new Response(JSON.stringify({ error: 'Invalid manager name' }), {

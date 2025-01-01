@@ -50,7 +50,7 @@ export async function POST(req) {
     });
 
 
-    if (isCurrentMonth) {
+
       // Count projects created within the current month
       const projects = await prisma.managedProject.count({
         where: {
@@ -88,7 +88,7 @@ export async function POST(req) {
           );
         }
       }
-    }
+    
 
       if (!manager) {
         console.error(`Manager not found with ID: ${projectManager}`);
