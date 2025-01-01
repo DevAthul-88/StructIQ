@@ -12,7 +12,7 @@ import LogoDark from 'public/_static/logo_dark.png'
 import LogoLight from 'public/_static/logo_light.png'
 
 export const metadata: Metadata = {
-  title: "Login | – StructIQ",
+  title: "Login – StructIQ",
   description: "Login to your account to access personalized features and content.",
 }
 

@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mongodb"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -13,8 +13,8 @@ enum UserRole {
 }
 
 model Account {
-  id                String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId            String   @db.ObjectId
+  id                String   @id @default(uuid()) @map("_id")
+  userId            String
   type              String
   provider          String
   providerAccountId String
@@ -35,9 +35,9 @@ model Account {
 }
 
 model Session {
-  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  id           String   @id @default(uuid()) @map("_id")
   sessionToken String   @unique
-  userId       String   @db.ObjectId
+  userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -45,7 +45,7 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  id            String    @id @default(uuid()) @map("_id")
   name          String?
   email         String?   @unique
   emailVerified DateTime?
@@ -68,7 +68,7 @@ model User {
 }
 
 model VerificationToken {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  id         String   @id @default(uuid()) @map("_id")
   identifier String
   token      String   @unique
   expires    DateTime
@@ -77,8 +77,8 @@ model VerificationToken {
 }
 
 model Manager {
-  id     String  @id @default(auto()) @map("_id") @db.ObjectId
-  userId String  @db.ObjectId
+  id     String  @id @default(uuid()) @map("_id")
+  userId String
   name   String?
 
   managedProjects ManagedProject[]
@@ -87,7 +87,7 @@ model Manager {
 }
 
 model ManagedProject {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  id            String   @id @default(uuid()) @map("_id")
   projectName   String
   projectType   String
   clientName    String
@@ -98,7 +98,7 @@ model ManagedProject {
   description   String?
 
   dimension   Dimension?
-  dimensionId String?    @unique @db.ObjectId
+  dimensionId String?    @unique
 
   layoutPreferences Layout[]
   materials         Material[]
@@ -110,10 +110,10 @@ model ManagedProject {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  managerId String  @db.ObjectId
+  managerId String
   manager   Manager @relation(fields: [managerId], references: [id])
 
-  userId  String?  @db.ObjectId
+  userId  String?
   user    User?    @relation(fields: [userId], references: [id])
   scenes  Scene[]
   designs Design[]
@@ -123,54 +123,53 @@ model ManagedProject {
 }
 
 model Dimension {
-  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  id     String @id @default(uuid()) @map("_id")
   length Float
   width  Float
   height Float?
   units  String
 
-  project          ManagedProject @relation(fields: [projectId], references: [id])
-  projectId        String         @unique @db.ObjectId
-  managedProjectId String?        @db.ObjectId
+  project ManagedProject @relation(fields: [projectId], references: [id])
+  projectId String @unique
 
   @@map("project_dimensions")
 }
 
 model Layout {
-  id          String         @id @default(auto()) @map("_id") @db.ObjectId
+  id          String         @id @default(uuid()) @map("_id")
   type        String
   description String?
-  projectId   String         @db.ObjectId
+  projectId   String
   project     ManagedProject @relation(fields: [projectId], references: [id])
 
   @@map(name: "project_layouts")
 }
 
 model Material {
-  id         String         @id @default(auto()) @map("_id") @db.ObjectId
+  id         String         @id @default(uuid()) @map("_id")
   type       String
   properties String?
-  projectId  String         @db.ObjectId
+  projectId  String
   project    ManagedProject @relation(fields: [projectId], references: [id])
 
   @@map(name: "project_materials")
 }
 
 model StructuralFeature {
-  id          String         @id @default(auto()) @map("_id") @db.ObjectId
+  id          String         @id @default(uuid()) @map("_id")
   type        String
   description String?
   quantity    Int?
-  projectId   String         @db.ObjectId
+  projectId   String
   project     ManagedProject @relation(fields: [projectId], references: [id])
 
   @@map(name: "project_structural_features")
 }
 
 model Scene {
-  id          String         @id @default(auto()) @map("_id") @db.ObjectId
+  id          String         @id @default(uuid()) @map("_id")
   name        String
-  projectId   String         @db.ObjectId
+  projectId   String
   project     ManagedProject @relation(fields: [projectId], references: [id])
   meshes      Mesh[]
   lights      Light[]
@@ -182,15 +181,15 @@ model Scene {
 }
 
 model Mesh {
-  id         String     @id @default(auto()) @map("_id") @db.ObjectId
+  id         String     @id @default(uuid()) @map("_id")
   name       String
   type       String
-  sceneId    String     @db.ObjectId
+  sceneId    String
   scene      Scene      @relation(fields: [sceneId], references: [id])
   position   String
   rotation   String
   scaling    String
-  materialId String?    @db.ObjectId
+  materialId String?
   material   Materials? @relation(fields: [materialId], references: [id])
   properties String?
   createdAt  DateTime   @default(now())
@@ -198,10 +197,10 @@ model Mesh {
 }
 
 model Materials {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  id         String   @id @default(uuid()) @map("_id")
   name       String
   type       String
-  sceneId    String   @db.ObjectId
+  sceneId    String
   scene      Scene    @relation(fields: [sceneId], references: [id])
   meshes     Mesh[]
   properties String
@@ -210,10 +209,10 @@ model Materials {
 }
 
 model Light {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  id        String   @id @default(uuid()) @map("_id")
   name      String
   type      String
-  sceneId   String   @db.ObjectId
+  sceneId   String
   scene     Scene    @relation(fields: [sceneId], references: [id])
   position  String
   intensity Float
@@ -224,10 +223,10 @@ model Light {
 }
 
 model Camera {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  id         String   @id @default(uuid()) @map("_id")
   name       String
   type       String
-  sceneId    String   @db.ObjectId
+  sceneId    String
   scene      Scene    @relation(fields: [sceneId], references: [id])
   position   String
   target     String
@@ -237,8 +236,8 @@ model Camera {
 }
 
 model Environment {
-  id           String   @id @default(auto()) @map("_id") @db.ObjectId
-  sceneId      String   @unique @db.ObjectId
+  id           String   @id @default(uuid()) @map("_id")
+  sceneId      String   @unique
   scene        Scene    @relation(fields: [sceneId], references: [id])
   skyboxType   String?
   groundColor  String?
@@ -248,8 +247,8 @@ model Environment {
 }
 
 model Design {
-  id        String         @id @default(auto()) @map("_id") @db.ObjectId
-  projectId String         @db.ObjectId
+  id        String         @id @default(uuid()) @map("_id")
+  projectId String
   project   ManagedProject @relation(fields: [projectId], references: [id])
 
   designData String
@@ -258,13 +257,13 @@ model Design {
 }
 
 model Report {
-  id         String         @id @default(auto()) @map("_id") @db.ObjectId
+  id         String         @id @default(uuid()) @map("_id")
   content    String
-  projectId  String         @db.ObjectId
+  projectId  String
   project    ManagedProject @relation(fields: [projectId], references: [id])
   command    String?
   reportType String         @default("general")
-  userId     String         @db.ObjectId
+  userId     String
   user       User           @relation(fields: [userId], references: [id])
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
