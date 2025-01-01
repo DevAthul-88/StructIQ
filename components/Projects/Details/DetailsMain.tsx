@@ -60,7 +60,7 @@ export default function ProjectPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <ProjectDetails project={project} />
-            {project?.dimension && <ProjectDimensions dimensions={project?.dimension} />}
+            {project?.dimensions && <ProjectDimensions dimensions={project?.dimensions} />}
           </div>
           <div>
             <ProjectLayouts layouts={project?.layoutPreferences} />
